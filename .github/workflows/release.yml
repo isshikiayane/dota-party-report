@@ -1,0 +1,52 @@
+name: Build Windows portable release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build
+        required: true
+        default: v1.1.7
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-portable:
+    runs-on: windows-latest
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Download Node.js runtime
+        shell: pwsh
+        run: |
+          $nodeVersion = '26.5.1'
+          $nodeZip = Join-Path $env:RUNNER_TEMP "node-v$nodeVersion-win-x64.zip"
+          Invoke-WebRequest "https://nodejs.org/dist/v$nodeVersion/node-v$nodeVersion-win-x64.zip" -OutFile $nodeZip
+          Expand-Archive -LiteralPath $nodeZip -DestinationPath (Join-Path $env:RUNNER_TEMP 'node') -Force
+
+      - name: Test and build portable package
+        shell: pwsh
+        run: |
+          $nodeVersion = '26.5.1'
+          $nodeExe = Join-Path $env:RUNNER_TEMP "node/node-v$nodeVersion-win-x64/node.exe"
+          & $nodeExe --test --test-isolation=none test/accounts.test.js test/report.test.js test/server.test.js
+
+          $packageRoot = Join-Path $PWD 'dist/Dota2开黑档案-Windows-x64'
+          New-Item -ItemType Directory -Force -Path $packageRoot, (Join-Path $packageRoot 'runtime'), (Join-Path $packageRoot '.cache') | Out-Null
+          Copy-Item -Recurse -Force public, server, work -Destination $packageRoot
+          Copy-Item -Force '启动 Dota 2 开黑档案.bat', '使用说明.txt', LICENSE -Destination $packageRoot
+          Copy-Item -Force $nodeExe -Destination (Join-Path $packageRoot 'runtime/node.exe')
+
+          $zipName = "Dota2-Party-Report-Windows-x64-Portable-${{ inputs.tag }}.zip"
+          Compress-Archive -LiteralPath $packageRoot -DestinationPath (Join-Path $PWD $zipName) -CompressionLevel Optimal
+          "ASSET_PATH=$(Join-Path $PWD $zipName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Attach package to GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ inputs.tag }}" "$env:ASSET_PATH" --clobber
