@@ -1,0 +1,14 @@
+services:
+  dota-party-report:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      OPENDOTA_API_KEY: ${OPENDOTA_API_KEY:-}
+      CACHE_TTL_HOURS: ${CACHE_TTL_HOURS:-12}
+    volumes:
+      - dota-cache:/app/.cache
+    restart: unless-stopped
+
+volumes:
+  dota-cache:

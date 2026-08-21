@@ -1,0 +1,15 @@
+{
+  "name": "dota-party-report",
+  "version": "1.1.7",
+  "private": false,
+  "description": "输入2–5个Dota账号ID，在本地生成OpenDota公开同场同阵营分析报告。",
+  "license": "MIT",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test --test-isolation=none test/accounts.test.js test/report.test.js test/server.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

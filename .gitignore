@@ -1,0 +1,10 @@
+node_modules/
+.env
+.cache/
+*.log
+outputs/*.html
+outputs/*.zip
+work/od_[0-9]*.json
+work/portable-package-*/
+work/Dota2开黑档案-Windows-x64/
+work/source-package-*/
